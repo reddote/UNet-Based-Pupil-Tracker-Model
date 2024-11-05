@@ -1,0 +1,6 @@
+[2024-11-05 11:39:34,816] {main.py:73} INFO - Starting training process.
+[2024-11-05 11:39:34,816] {main.py:96} INFO - Epoch 1/10
+[2024-11-05 11:39:34,816] {main.py:97} INFO - ----------
+[2024-11-05 11:42:03,871] {main.py:73} INFO - Starting training process.
+[2024-11-05 11:42:03,872] {main.py:96} INFO - Epoch 1/10
+[2024-11-05 11:42:03,872] {main.py:97} INFO - ----------
