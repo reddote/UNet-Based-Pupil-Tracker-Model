@@ -30,7 +30,6 @@ data_transforms = transforms.Compose([
 ])
 
 
-
 class Main:
     def __init__(self):
         # Model ve diğer ayarları başlatma
@@ -39,7 +38,7 @@ class Main:
         self.model.eval()  # Modeli değerlendirme moduna al
         self.transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.7324], std=[0.1679])
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
 
     def run2(self, image_path):
@@ -66,28 +65,27 @@ class Main:
             output = self.model(input_tensor)
 
         # 7. Tahmini al ve döndür
-        predicted_gaze = output.cpu().numpy().flatten()  # GPU'dan CPU'ya taşı ve numpy dizisine dönüştür
-        print(f"Predicted Gaze (gaze_x, gaze_y, gaze_z): {predicted_gaze}")
-        self.run_image(image_3channel, 186.118255, 160.316709, 190.016142, predicted_gaze[0], predicted_gaze[1], predicted_gaze[2])
-        return predicted_gaze
+        predicted_pupil = output.cpu().numpy().flatten()  # GPU'dan CPU'ya taşı ve numpy dizisine dönüştür
+        print(f"Predicted Pupil Diameter (angle, center_x, center_y, width, height): {predicted_pupil}")
+        self.run_image(image_3channel, predicted_pupil[0], predicted_pupil[1],
+                       predicted_pupil[2], predicted_pupil[3], predicted_pupil[4])
+        return predicted_pupil
 
-    def run_image(self, image, center_x, center_y, radius, x, y, z):
+    def run_image(self, image, angle, center_x, center_y, width, height):
+        center = (center_x, center_y)
+        axes_lengths = (width / 2, height / 2)
+        angles = angle
 
-        gaze_x = int(center_x + center_x * x * z)
-        gaze_y = int(center_y + center_y * y * z)
+        # print(f"image height: {image.shape[0]}, image width: {image.shape[1]}")
+        startpoint_int = (int(center[0]), int(center[1]))
+        axes_int = (int(axes_lengths[0]), int(axes_lengths[1]))
 
-        end_point = (gaze_x, gaze_y)
+        print(
+            f"Center X: {center_x}, Center Y: {center_y}, Width: {width}, "
+            f"Height : {height}, Angle : {angle} ")
 
-        startpoint_int = (int(center_x), int(center_y))
-
-        print(f"image height: {image.shape[0]}, image width: {image.shape[1]}")
-
-        cv2.circle(image, (gaze_x, gaze_y), 2, (255, 0, 255), -1)
-        cv2.circle(image, (int(center_x), int(center_y)), 2, (255, 255, 0), -1)
-        cv2.circle(image, (int(center_x), int(center_y)), int(radius), (0, 255, 255), 3)
-        cv2.line(image, startpoint_int, end_point, (255, 255, 0), 1)
+        cv2.ellipse(image, startpoint_int, axes_int, angles, 0, 360, (255, 0, 0), 2)
         cv2.imshow('Image with Center', image)
-        print(f"Center X: {center_x}, Center Y: {center_y}, gaze X: {x}, gaze Y: {y}, gaze Z: {z}, radius: {radius} ")
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
