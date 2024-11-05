@@ -99,7 +99,7 @@ class GazeDataset(Dataset):
             else:
                 break
 
-            if pupil_error == 1 or pupil_error == 2:
+            if pupil_error == -1:
                 # print(f"Pupil center not detected or some error: {item}")
                 item = (item + 1) % len(self)
                 continue
