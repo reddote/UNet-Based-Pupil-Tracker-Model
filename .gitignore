@@ -75,6 +75,9 @@ docs/_build/
 .pybuilder/
 target/
 
+#Pycharm idea
+.idea
+
 # Jupyter Notebook
 .ipynb_checkpoints
 
@@ -160,3 +163,27 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+images/
+NvGazeCSV/
+images2/
+test1/
+test.py
+images1/
+GazeCSV/
+image1gaze/
+images1csv/
+eNetEyeTracking.rar
+predict/
+GazeCSV1/
+GazeCSV1val/
+images1val/
+NvGazeCSV1/
+NvGazeCSV1val/
+GazeCSVval/
+NvGazeCSVval/
+imagesval/
+videos/
+videosData/
+output_frames/
+runs/
+olddata/
