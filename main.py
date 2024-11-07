@@ -87,10 +87,8 @@ class Main:
     def train_model(self, model, criterion, optimizer, dataloaders, num_epochs=10):
         self.num_epochs += num_epochs
         tensorboard_counter = 0
-        validation_counter = 0
 
         train_loss = 0
-        val_loss = 0
 
         for epoch in range(num_epochs):
             logger.info(f'Epoch {epoch + 1}/{num_epochs}')
@@ -121,8 +119,9 @@ class Main:
                             train_loss = loss.item()
                         if phase == 'val':
                             val_loss = loss.item()
-                            self.writer.add_scalar('Loss/Train', loss.item(), validation_counter)
-                            validation_counter += 1
+                            self.writer.add_scalar('Loss/Val', val_loss, tensorboard_counter)
+                            print(f"Phase: {phase} Average Loss : {loss.item()}")
+                            # validation_counter += 1
 
                         # inputs.size(0) is the batch size, or the number of samples in the current batch
                         # This is loss.item() gives the average loss per sample in the batch
@@ -130,14 +129,14 @@ class Main:
                         running_loss += loss.item() * inputs.size(0)
                         if counter % 10 == 0:
                             print(f"Phase: {phase} Average Loss : {loss.item()}")
-                            self.writer.add_scalars('Loss', {'Train': train_loss, 'validation': val_loss}, tensorboard_counter)
+                            self.writer.add_scalar('Loss/Train', train_loss, tensorboard_counter)
                         counter += 1
                         tensorboard_counter += 1
 
                 epoch_loss = running_loss / len(dataloaders[phase].dataset)
 
                 # Log the losses to TensorBoard
-                # Save Loss valuesself.train_loss.append(epoch_loss)
+                # Save Loss values self.train_loss.append(epoch_loss)
                 self.writer.add_scalar('Epoch_Loss/Train', epoch_loss, epoch)
 
                 logger.info(f'{phase} Loss: {epoch_loss:.4f}')
