@@ -188,3 +188,4 @@ output_frames/
 runs/
 olddata/
 log.txt
+efficientnet_b0_regression_0.pth

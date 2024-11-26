@@ -5,6 +5,7 @@ import os
 import torch
 from torchvision.transforms import transforms
 from PIL import Image
+import math
 
 
 class GazeDataset(Dataset):
@@ -17,40 +18,42 @@ class GazeDataset(Dataset):
         self.validity_csv_path = os.path.join(project_folder, 'videosData')
         # self.eye_csv_path = os.path.join(project_folder, 'videosData')
 
+        self.train_file_number = [1, 2, 3, 4, 5, 6, 19, 25, 15, 16]
+        self.val_file_number = [17, 18]
+
         # Load different files based on the phase
         if phase == 'train':
-            self.file_name = 1
-            self.border = 5
-            self.actual_image_path = os.path.join(self.image_path, str(self.file_name))
-            self.actual_pupil_path = os.path.join(self.pupil_csv_path, str(self.file_name) + str('-Pupil') + '.csv')
-            self.actual_validity_path = os.path.join(self.validity_csv_path, str(self.file_name) + str('-Validity') + '.csv')
+            self.file_name = 0
+            self.actual_image_path = os.path.join(self.image_path, str(self.train_file_number[self.file_name]))
+            self.actual_pupil_path = os.path.join(self.pupil_csv_path, str(self.train_file_number[self.file_name]) + str('-Pupil') + '.csv')
+            self.actual_validity_path = os.path.join(self.validity_csv_path, str(self.train_file_number[self.file_name]) + str('-Validity') + '.csv')
             # self.actual_eye_csv_path = os.path.join(self.eye_csv_path, str(self.file_name) + str('-Center') + '.csv')
+            self.images_path_array = {}
+            self.init_paths(self.train_file_number)
         elif phase == 'val':
-            self.file_name = 6
-            self.border = 8
-            self.actual_image_path = os.path.join(self.image_path, str(self.file_name))
-            self.actual_pupil_path = os.path.join(self.pupil_csv_path, str(self.file_name) + str('-Pupil') + '.csv')
+            self.file_name = 0
+            self.actual_image_path = os.path.join(self.image_path, str(self.val_file_number[self.file_name]))
+            self.actual_pupil_path = os.path.join(self.pupil_csv_path, str(self.val_file_number[self.file_name]) + str('-Pupil') + '.csv')
             self.actual_validity_path = os.path.join(self.validity_csv_path,
-                                                     str(self.file_name) + str('-Validity') + '.csv')
+                                                     str(self.val_file_number[self.file_name]) + str('-Validity') + '.csv')
+            self.images_path_array = {}
+            self.init_paths(self.val_file_number)
             # self.actual_eye_csv_path = os.path.join(self.eye_csv_path, str(self.file_name) + str('-Center') + '.csv')
-
-        self.images_path_array = {}
-        self.init_paths()
 
         self.transform = transform
 
     def __len__(self):
         return len(self.images_path_array)
 
-    def init_paths(self):
+    def init_paths(self, folder_number_array):
         folder = sorted(os.listdir(self.image_path), key=lambda x: int(x))
-        counter = 1
+        counter = 0
         for folder_number in folder:
-            if self.file_name == 0:
+            if self.file_name == -1:
                 break
 
-            idx = 0
-            folder_number = os.path.join(self.image_path, str(self.file_name))  # Ensure this is a list of paths
+            idx = -1
+            folder_number = os.path.join(self.image_path, str(folder_number_array[self.file_name]))  # Ensure this is a list of paths
             # print(f"Folder paths provided: {folder_number}")
             file_list = sorted(os.listdir(folder_number), key=lambda x: int(x.split('.')[0]))
             # print(f"file_list last{len(file_list)}")
@@ -68,6 +71,16 @@ class GazeDataset(Dataset):
                 idx += 1
             # print(f"self Gaze : {self.actual_gaze_csv_path}")
             self.next_data()
+
+    # def init_paths2(self):
+    #     folder = sorted(os.listdir(self.image_path), key=lambda x: int(x))
+    #     counter = 0
+    #     for folder_number in folder:
+    #         # print(f"self Gaze : {self.actual_gaze_csv_path}")
+    #         if self.file_name == -1:
+    #             break
+    #         print(folder_number)
+    #         self.next_data()
 
     def __getitem__(self, item):
         while True:
@@ -104,11 +117,11 @@ class GazeDataset(Dataset):
                 item = (item + 1) % len(self)
                 continue
 
-            center_x = self.pupil_csv.iloc[idx]['CENTER X']
-            center_y = self.pupil_csv.iloc[idx]['CENTER Y']
-            angle = self.pupil_csv.iloc[idx]['ANGLE']
-            width = self.pupil_csv.iloc[idx]['WIDTH']
-            height = self.pupil_csv.iloc[idx]['HEIGHT']
+            center_x = self.pupil_csv.iloc[idx]['CENTER X']/384
+            center_y = self.pupil_csv.iloc[idx]['CENTER Y']/288
+            angle = math.radians(self.pupil_csv.iloc[idx]['ANGLE'])
+            width = self.pupil_csv.iloc[idx]['WIDTH']/384
+            height = self.pupil_csv.iloc[idx]['HEIGHT']/288
 
             image_3channel = cv2.cvtColor(temp_image, cv2.COLOR_GRAY2RGB)
             image = Image.fromarray(image_3channel)
@@ -139,24 +152,37 @@ class GazeDataset(Dataset):
 
     def next_data(self):
         self.file_name += 1
-        if self.file_name > self.border:
-            self.file_name = 0
-            return
+        if self.phase == 'train':
+            if self.file_name >= self.train_file_number.__len__():
+                self.file_name = -1
+                return
+            self.actual_image_path = os.path.join(self.image_path, str(self.train_file_number[self.file_name]))
+            self.actual_pupil_path = os.path.join(self.pupil_csv_path,
+                                                  str(self.train_file_number[self.file_name]) + str('-Pupil') + '.csv')
+            self.actual_validity_path = os.path.join(self.validity_csv_path,
+                                                     str(self.train_file_number[self.file_name]) + str(
+                                                         '-Validity') + '.csv')
+        else:
+            if self.file_name >= self.val_file_number.__len__():
+                self.file_name = -1
+                return
+            self.actual_image_path = os.path.join(self.image_path, str(self.val_file_number[self.file_name]))
+            self.actual_pupil_path = os.path.join(self.pupil_csv_path,
+                                                  str(self.val_file_number[self.file_name]) + str('-Pupil') + '.csv')
+            self.actual_validity_path = os.path.join(self.validity_csv_path,
+                                                     str(self.val_file_number[self.file_name]) + str(
+                                                         '-Validity') + '.csv')
         # print(f"Train file number {self.file_name}")
-
-        self.actual_image_path = os.path.join(self.image_path, str(self.file_name))
-        self.actual_pupil_path = os.path.join(self.pupil_csv_path, str(self.file_name) + str('-Pupil') + '.csv')
-        self.actual_validity_path = os.path.join(self.validity_csv_path,
-                                                 str(self.file_name) + str('-Validity') + '.csv')
         # self.actual_eye_csv_path = os.path.join(self.eye_csv_path, str(self.file_name) + str('-Center') + '.csv')
-
         # print(f"next Data gaze : {self.actual_gaze_csv_path}")
 
 
 
 """
 dataset = GazeDataset(phase='train', transform=None)
-dataset.__getitem__(450)
+dataset.__getitem__(79999)
+
+
 data_transforms = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
