@@ -32,14 +32,13 @@ logger = logging.getLogger('Logs')
 
 # Define transformations
 data_transforms = transforms.Compose([
-    transforms.Resize((224, 168)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
 
 class Main:
-    def __init__(self, alpha=1.0, beta=1.0, gamma=1.0):
+    def __init__(self, alpha=1.0, beta=0.5, gamma=1.0):
         # Load datasets
         self.dataset = gaze_dataset.GazeDataset(
             phase='train',
@@ -70,6 +69,10 @@ class Main:
         self.gamma = gamma
         self.mse_loss = nn.MSELoss()
         self.smooth_l1_loss = nn.SmoothL1Loss()
+
+        # Define weights for each class (higher weight for minority classes)
+        class_weights = torch.tensor([10.0, 1.0])  # Pupil, Background
+        self.segmentation_loss = nn.CrossEntropyLoss(weight=class_weights)
         # criterion ends
 
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
@@ -176,6 +179,9 @@ class Main:
             print(f'Epoch Train Loss: {epoch_loss:.4f}')
             print(f'Epoch Val Loss: {val_epoch_loss:.4f}')
             print(f'After LR: {self.lr_scheduler.get_last_lr()}')
+            # Save the model
+            torch.save(model.state_dict(), f'{epoch}_efficientnet_b0_regression_0.pth')
+            logger.info(f"Model saved to {epoch}_efficientnet_b0_regression_0.pth")
         self.writer.close()
         return model
 

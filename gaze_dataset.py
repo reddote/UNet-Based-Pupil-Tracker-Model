@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import os
@@ -14,6 +15,7 @@ class GazeDataset(Dataset):
         project_folder = os.path.dirname(__file__)
         project_folder_images = r"C:\Users\malpe\Desktop\Project\eNet"
         self.image_path = os.path.join(project_folder_images, 'output_frames')
+        self.segmentation_path = os.path.join(project_folder_images, 'segmentation')
         self.pupil_csv_path = os.path.join(project_folder, 'videosData')
         self.validity_csv_path = os.path.join(project_folder, 'videosData')
         # self.eye_csv_path = os.path.join(project_folder, 'videosData')
@@ -25,6 +27,7 @@ class GazeDataset(Dataset):
         if phase == 'train':
             self.file_name = 0
             self.actual_image_path = os.path.join(self.image_path, str(self.train_file_number[self.file_name]))
+            self.actual_segmentation_path = os.path.join(self.segmentation_path, str(self.train_file_number[self.file_name]))
             self.actual_pupil_path = os.path.join(self.pupil_csv_path, str(self.train_file_number[self.file_name]) + str('-Pupil') + '.csv')
             self.actual_validity_path = os.path.join(self.validity_csv_path, str(self.train_file_number[self.file_name]) + str('-Validity') + '.csv')
             # self.actual_eye_csv_path = os.path.join(self.eye_csv_path, str(self.file_name) + str('-Center') + '.csv')
@@ -33,6 +36,8 @@ class GazeDataset(Dataset):
         elif phase == 'val':
             self.file_name = 0
             self.actual_image_path = os.path.join(self.image_path, str(self.val_file_number[self.file_name]))
+            self.actual_segmentation_path = os.path.join(self.segmentation_path,
+                                                         str(self.train_file_number[self.file_name]))
             self.actual_pupil_path = os.path.join(self.pupil_csv_path, str(self.val_file_number[self.file_name]) + str('-Pupil') + '.csv')
             self.actual_validity_path = os.path.join(self.validity_csv_path,
                                                      str(self.val_file_number[self.file_name]) + str('-Validity') + '.csv')
@@ -53,17 +58,22 @@ class GazeDataset(Dataset):
                 break
 
             idx = -1
-            folder_number = os.path.join(self.image_path, str(folder_number_array[self.file_name]))  # Ensure this is a list of paths
+            # Ensure this is a list of paths
+            folder_number = os.path.join(self.image_path, str(folder_number_array[self.file_name]))
+            # Ensure this is a list all the path for the segmentation images
+            folder_number_segmentation = os.path.join(self.segmentation_path, str(folder_number_array[self.file_name]))
             # print(f"Folder paths provided: {folder_number}")
             file_list = sorted(os.listdir(folder_number), key=lambda x: int(x.split('.')[0]))
             # print(f"file_list last{len(file_list)}")
             for file in file_list:
                 file_path = os.path.join(folder_number, file)
+                segmentation_path = os.path.join(folder_number_segmentation, file)
                 self.images_path_array[counter] = (
                     file_path,
                     self.actual_pupil_path,
                     self.actual_validity_path,
                     idx,
+                    segmentation_path,
                 )
                 #print(f"File name {self.file_name}:")
                 #print(f"Entry {counter}:", self.images_path_array[counter])
@@ -90,8 +100,10 @@ class GazeDataset(Dataset):
             # print(f"img : {self.images_path_array[item][0]}")
 
             img_name = self.images_path_array[item][0]
-            # print(img_name)
+            segmentation_name = self.images_path_array[item][4]
+            # print(segmentation_name)
             temp_image = cv2.imread(img_name, cv2.IMREAD_GRAYSCALE)
+            segmentation_mask = cv2.imread(segmentation_name, cv2.IMREAD_GRAYSCALE)
             # Load the CSV files
             self.pupil_csv = pd.read_csv(self.images_path_array[item][1])
             self.validity = pd.read_csv(self.images_path_array[item][2])
@@ -123,13 +135,20 @@ class GazeDataset(Dataset):
             width = self.pupil_csv.iloc[idx]['WIDTH']/384
             height = self.pupil_csv.iloc[idx]['HEIGHT']/288
 
+            # Normalize mask to [0, 1] range (if not already normalized)
+            mask = (segmentation_mask >= 200.0).astype(int)  # Pupil = 1, Non-pupil = 0
+            # Prepare the three channels
+            channel1 = mask  # Pupil region
+            channel2 = 1-mask  # Non-pupil region (inverse of the mask)
+            channel3 = np.zeros_like(mask)  # Trivial class (all zeros)
+
             image_3channel = cv2.cvtColor(temp_image, cv2.COLOR_GRAY2RGB)
             image = Image.fromarray(image_3channel)
 
             if self.transform is not None:
                 image = self.transform(image)
 
-            return image, torch.tensor([center_x, center_y, angle, width, height], dtype=torch.float32)
+            return image, torch.tensor([channel1, channel2], dtype=torch.float32)
 
     def run_image(self, image, center_x, center_y, angle, width, height):
 
@@ -157,6 +176,8 @@ class GazeDataset(Dataset):
                 self.file_name = -1
                 return
             self.actual_image_path = os.path.join(self.image_path, str(self.train_file_number[self.file_name]))
+            self.actual_segmentation_path = os.path.join(self.segmentation_path,
+                                                         str(self.train_file_number[self.file_name]))
             self.actual_pupil_path = os.path.join(self.pupil_csv_path,
                                                   str(self.train_file_number[self.file_name]) + str('-Pupil') + '.csv')
             self.actual_validity_path = os.path.join(self.validity_csv_path,
@@ -167,6 +188,8 @@ class GazeDataset(Dataset):
                 self.file_name = -1
                 return
             self.actual_image_path = os.path.join(self.image_path, str(self.val_file_number[self.file_name]))
+            self.actual_segmentation_path = os.path.join(self.segmentation_path,
+                                                         str(self.train_file_number[self.file_name]))
             self.actual_pupil_path = os.path.join(self.pupil_csv_path,
                                                   str(self.val_file_number[self.file_name]) + str('-Pupil') + '.csv')
             self.actual_validity_path = os.path.join(self.validity_csv_path,
@@ -180,7 +203,7 @@ class GazeDataset(Dataset):
 
 """
 dataset = GazeDataset(phase='train', transform=None)
-dataset.__getitem__(79999)
+dataset.__getitem__(0)
 
 
 data_transforms = transforms.Compose([
