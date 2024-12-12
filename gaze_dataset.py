@@ -135,12 +135,15 @@ class GazeDataset(Dataset):
             width = self.pupil_csv.iloc[idx]['WIDTH']/384
             height = self.pupil_csv.iloc[idx]['HEIGHT']/288
 
-            # Normalize mask to [0, 1] range (if not already normalized)
-            mask = (segmentation_mask >= 200.0).astype(int)  # Pupil = 1, Non-pupil = 0
+            # Normalize mask to [0, 1] range
+            mask = (np.float32(segmentation_mask) >= 200.0).astype(int)  # Pupil = 1, Non-pupil = 0
+
             # Prepare the three channels
-            channel1 = mask  # Pupil region
-            channel2 = 1-mask  # Non-pupil region (inverse of the mask)
-            channel3 = np.zeros_like(mask)  # Trivial class (all zeros)
+            channel1 = torch.tensor(mask, dtype=torch.long).unsqueeze(0)  # Pupil region
+            channel2 = torch.tensor(1 - mask, dtype=torch.float32).unsqueeze(0)  # Non-pupil region
+            channel3 = torch.zeros_like(channel1)  # Trivial class (all zeros)
+            # Combine the three channels into a single tensor
+            segmentation_tensor = torch.cat([channel1, channel2, channel3], dim=0)  # Shape: [3, H, W]
 
             image_3channel = cv2.cvtColor(temp_image, cv2.COLOR_GRAY2RGB)
             image = Image.fromarray(image_3channel)
@@ -148,7 +151,12 @@ class GazeDataset(Dataset):
             if self.transform is not None:
                 image = self.transform(image)
 
-            return image, torch.tensor([channel1, channel2], dtype=torch.float32)
+            # Convert transformed image to tensor
+            # Normalize to [0, 1]
+            # image_tensor = torch.tensor(np.array(image), dtype=torch.float32).permute(2, 0, 1) / 255.0
+            # input_tensor = image_tensor.unsqueeze(0)  # Shape becomes [1, 3, 288, 384]
+            # print(input_tensor.shape)
+            return image, channel1
 
     def run_image(self, image, center_x, center_y, angle, width, height):
 
@@ -201,9 +209,12 @@ class GazeDataset(Dataset):
 
 
 
-"""
+
+
+
 dataset = GazeDataset(phase='train', transform=None)
 dataset.__getitem__(0)
+"""
 
 
 data_transforms = transforms.Compose([
