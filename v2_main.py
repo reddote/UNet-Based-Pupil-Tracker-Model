@@ -16,7 +16,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+# print(device)
 # Setup logging
 file_handler = logging.FileHandler(filename='log.txt')
 stdout_handler = logging.StreamHandler(stream=sys.stdout)
@@ -71,8 +71,8 @@ class Main:
         self.smooth_l1_loss = nn.SmoothL1Loss()
 
         # Define weights for each class (higher weight for minority classes)
-        class_weights = torch.tensor([10.0, 1.0])  # Pupil, Background
-        self.segmentation_loss = nn.CrossEntropyLoss(weight=class_weights)
+        class_weights = torch.tensor([10.0, 1.0])  # Pupil, Background, np_zero
+        self.segmentation_loss = nn.CrossEntropyLoss()
         # criterion ends
 
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
@@ -87,7 +87,7 @@ class Main:
         trained_model = None
 
         # Train the model
-        trained_model = self.train_model(self.model, self.multi_task_criterion, self.optimizer, self.dataloaders,
+        trained_model = self.train_model(self.model, self.segmentation_loss, self.optimizer, self.dataloaders,
                                          num_epochs=5)
 
         if trained_model is not None:
@@ -131,10 +131,16 @@ class Main:
 
             for inputs, labels in dataloaders['train']:
                 inputs = inputs.to(device)
-                labels = labels.to(device).float()  # Now labels should have shape [batch_size, 2]
+                labels = labels.to(device).long()  # Now labels should have shape [batch_size, 2]
+                labels = labels.squeeze(1)
                 outputs = model(inputs)
-                loss = criterion(outputs, labels)
+                # print(f"input shape : {inputs.shape}")
+                # print(f"Outputs Shape: {outputs.shape}")  # Expected: [batch_size, num_classes, height, width]
+                # print(f"Labels Shape: {labels.shape}")  # Expected: [batch_size, height, width]
+                # print(f"Labels Type: {labels.dtype}")  # Expected: torch.int64 (long)
+                # print(f"Unique Labels: {torch.unique(labels)}")  # Check valid class indices
                 # print(f"Output shape: {outputs.shape}, Labels shape: {labels.shape}")
+                loss = criterion(outputs, labels)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -156,7 +162,8 @@ class Main:
             running_loss = val_loss
             for inputs, labels in dataloaders['val']:
                 inputs = inputs.to(device)
-                labels = labels.to(device).float()  # Now labels should have shape [batch_size, 2]
+                labels = labels.to(device).long()  # Now labels should have shape [batch_size, 2]
+                labels = labels.squeeze(1)
                 outputs = model(inputs)
                 with torch.no_grad():
                     loss = criterion(outputs, labels)
