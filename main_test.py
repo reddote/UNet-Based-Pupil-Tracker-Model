@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 import sys
 import efficient_b0
@@ -7,6 +8,7 @@ import torch
 import torchvision.transforms as transforms
 import cv2
 
+import test_model
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -25,18 +27,20 @@ logger = logging.getLogger('Logs')
 
 # Define transformations
 data_transforms = transforms.Compose([
+    transforms.Resize((224, 224)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.7324], std=[0.1679])
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
 
 class Main:
     def __init__(self):
         # Model ve diğer ayarları başlatma
-        self.model = efficient_b0.EfficientNetB0Regression().to(device)
-        self.model.load_state_dict(torch.load('efficientnet_b0_regression_0.pth', map_location=device))
+        self.model = test_model.TestModel().to(device)
+        self.model.load_state_dict(torch.load('5_efficientnet_b0_regression_0.pth', map_location=device))
         self.model.eval()  # Modeli değerlendirme moduna al
         self.transform = transforms.Compose([
+            transforms.Resize((224, 168)),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
@@ -71,18 +75,18 @@ class Main:
                        predicted_pupil[2], predicted_pupil[3], predicted_pupil[4])
         return predicted_pupil
 
-    def run_image(self, image, angle, center_x, center_y, width, height):
-        center = (center_x, center_y)
-        axes_lengths = (width / 2, height / 2)
-        angles = angle
-
+    def run_image(self, image, center_x, center_y, angle, width, height):
+        h, w, c = image.shape
+        print(f'{h}, {w}, {c}')
+        center = (center_x * w, center_y*h)
+        axes_lengths = (width*w / 2, height*h / 2)
+        angles = math.degrees(angle)
         # print(f"image height: {image.shape[0]}, image width: {image.shape[1]}")
         startpoint_int = (int(center[0]), int(center[1]))
         axes_int = (int(axes_lengths[0]), int(axes_lengths[1]))
-
         print(
-            f"Center X: {center_x}, Center Y: {center_y}, Width: {width}, "
-            f"Height : {height}, Angle : {angle} ")
+            f"Center X: {center_x*w}, Center Y: {center_y*h}, Width: {width*w}, "
+            f"Height : {height*h}, Angle : {angle} ")
 
         cv2.ellipse(image, startpoint_int, axes_int, angles, 0, 360, (255, 0, 0), 2)
         cv2.imshow('Image with Center', image)
@@ -95,6 +99,6 @@ if __name__ == '__main__':
     main = Main()
     project_folder = os.path.dirname(__file__)
     image_path = os.path.join(project_folder, 'predict')
-    image_path = os.path.join(image_path, '15501.jpg')
+    image_path = os.path.join(image_path, '00010.jpg')
     test_image_path = image_path  # Test etmek istediğiniz resmin yolu
     main.run2(test_image_path)

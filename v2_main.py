@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 import gaze_dataset
 import efficient_b0
+from unet_model import UNet384x288
 import os
 import multiprocessing
 import matplotlib.pyplot as plt
@@ -60,9 +61,9 @@ class Main:
             'val': self.val_dataloader
         }
 
-        # Initialize EfficientNetB0
-        self.model = efficient_b0.EfficientNetB0Regression().to(device)
-
+        # Initialize AI model
+        self.model = UNet384x288().to(device)
+        print(device)
         # multi task criterion
         self.alpha = alpha
         self.beta = beta
@@ -72,7 +73,7 @@ class Main:
 
         # Define weights for each class (higher weight for minority classes)
         class_weights = torch.tensor([10.0, 1.0])  # Pupil, Background, np_zero
-        self.segmentation_loss = nn.CrossEntropyLoss()
+        ]
         # criterion ends
 
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
@@ -146,8 +147,8 @@ class Main:
                 optimizer.step()
                 train_loss = loss.item()
                 running_loss += train_loss
-                # if tensorboard_counter % 10 == 0:
-                #     print(f"Phase: Train Average Loss : {loss.item()}")
+                if tensorboard_counter % 10 == 0:
+                    print(f"Phase: Train Average Loss : {loss.item()}")
                 self.writer.add_scalar('Loss/Train', train_loss, tensorboard_counter)
                 tensorboard_counter += 1
 

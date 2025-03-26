@@ -126,10 +126,8 @@ class Main:
                             print(f"Phase: {phase} Average Loss : {loss.item()}")
                             # validation_counter += 1
 
-                        # inputs.size(0) is the batch size, or the number of samples in the current batch
-                        # This is loss.item() gives the average loss per sample in the batch
                         # This total loss is then added to running_loss, which accumulates the loss for the entire epoch
-                        running_loss += loss.item() * inputs.size(0)
+                        running_loss += loss.item()
 
                         counter += 1
                         tensorboard_counter += 1
@@ -141,7 +139,6 @@ class Main:
                 self.writer.add_scalar('Epoch_Loss/Train', epoch_loss, epoch)
 
                 logger.info(f'{phase} Loss: {epoch_loss:.4f}')
-                print(f'Loss: {running_loss:.4f}')
                 print(f'Epoch Loss: {epoch_loss:.4f}')
         self.writer.close()
         self.plotting()

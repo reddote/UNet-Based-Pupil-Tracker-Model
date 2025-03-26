@@ -108,6 +108,7 @@ class GazeDataset(Dataset):
             self.pupil_csv = pd.read_csv(self.images_path_array[item][1])
             self.validity = pd.read_csv(self.images_path_array[item][2])
             idx = self.images_path_array[item][3]
+            # print(self.images_path_array[item][1])
             """
             # self.eye_csv = pd.read_csv(self.images_path_array[item][4])
             self.run_image(temp_image, self.pupil_csv.iloc[idx]['CENTER X'], self.pupil_csv.iloc[idx]['CENTER Y'],
@@ -213,7 +214,7 @@ class GazeDataset(Dataset):
 
 
 dataset = GazeDataset(phase='train', transform=None)
-dataset.__getitem__(0)
+dataset.__getitem__(95800)
 """
 
 
