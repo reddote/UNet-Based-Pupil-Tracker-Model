@@ -1,6 +1,0 @@
-sparse_rate: tot 0.9552238583564758 inp 0.0 delta 1.0 size torch.Size([1, 67, 128, 128])
-sparse_rate: tot 0.6525554656982422 inp 0.4788331985473633 delta 1.0 size torch.Size([1, 96, 128, 128])
-sparse_rate: tot 0.9552238583564758 inp 0.0 delta 1.0 size torch.Size([1, 67, 128, 128])
-sparse_rate: tot 0.6525554656982422 inp 0.4788331985473633 delta 1.0 size torch.Size([1, 96, 128, 128])
-sparse_rate: tot 0.9552238583564758 inp 0.0 delta 1.0 size torch.Size([1, 67, 128, 128])
-sparse_rate: tot 0.6525554656982422 inp 0.4788331985473633 delta 1.0 size torch.Size([1, 96, 128, 128])
