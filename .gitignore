@@ -187,6 +187,10 @@ videosData/
 output_frames/
 runs/
 olddata/
+log/
+garbage/
 log.txt
 efficientnet_b0_regression_0.pth
 5_efficientnet_b0_regression_0.pth
+util.py
+utils2.py
