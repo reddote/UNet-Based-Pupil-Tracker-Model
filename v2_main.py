@@ -6,11 +6,11 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
 import gaze_dataset
-import efficient_b0
+# import efficient_b0
 from unet_model import UNet384x288
 import os
 import multiprocessing
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -51,8 +51,8 @@ class Main:
         )
 
         # Create DataLoaders
-        self.train_dataloader = DataLoader(self.dataset, batch_size=32, shuffle=True, num_workers=4)
-        self.val_dataloader = DataLoader(self.datasetVal, batch_size=32, shuffle=False,
+        self.train_dataloader = DataLoader(self.dataset, batch_size=8, shuffle=True, num_workers=4)
+        self.val_dataloader = DataLoader(self.datasetVal, batch_size=8, shuffle=False,
                                          num_workers=4)  # No shuffle for validation
 
         # Include the validation dataloader in a dictionary with the training dataloader
@@ -73,14 +73,14 @@ class Main:
 
         # Define weights for each class (higher weight for minority classes)
         class_weights = torch.tensor([10.0, 1.0])  # Pupil, Background, np_zero
-        ]
+        self.segmentation_loss = nn.CrossEntropyLoss()
         # criterion ends
 
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
         self.train_loss = []
         self.val_loss = []
         self.num_epochs = 0
-        self.writer = SummaryWriter(log_dir='runs/your_experiment_name')
+        self.writer = SummaryWriter(log_dir='runs/modifiedDVOG')
         self.lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min')
 
     def run(self):
@@ -93,8 +93,8 @@ class Main:
 
         if trained_model is not None:
             # Save the model
-            torch.save(trained_model.state_dict(), 'efficientnet_b0_regression_0.pth')
-            logger.info("Model saved to efficientnet_b0_regression_0.pth")
+            torch.save(trained_model.state_dict(), 'newUnet.pth')
+            logger.info("Model saved to newUnet.pth")
         else:
             logger.error("Trained model is None")
             exit()
@@ -170,8 +170,8 @@ class Main:
                     loss = criterion(outputs, labels)
                     val_loss = loss.item()
                     running_loss += val_loss
-                    # if tensorboard_counter % 10 == 0:
-                    #     print(f"Phase: Val Average Loss : {loss.item()}")
+                    if tensorboard_counter % 10 == 0:
+                        print(f"Phase: Val Average Loss : {loss.item()}")
                     self.writer.add_scalar('Loss/Val', val_loss, validation_counter)
                     # This total loss is then added to running_loss, which accumulates the loss for the entire epoch
                     validation_counter += 1
@@ -188,8 +188,8 @@ class Main:
             print(f'Epoch Val Loss: {val_epoch_loss:.4f}')
             print(f'After LR: {self.lr_scheduler.get_last_lr()}')
             # Save the model
-            torch.save(model.state_dict(), f'{epoch}_efficientnet_b0_regression_0.pth')
-            logger.info(f"Model saved to {epoch}_efficientnet_b0_regression_0.pth")
+            torch.save(model.state_dict(), f'{epoch}_newUnet.pth')
+            logger.info(f"Model saved to {epoch}_newUnet.pth")
         self.writer.close()
         return model
 
