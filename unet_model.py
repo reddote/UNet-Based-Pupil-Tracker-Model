@@ -43,21 +43,30 @@ class DecoderBlock(nn.Module):
 class UNet384x288(nn.Module):
     def __init__(self):
         super().__init__()
-        self.enc1 = EncoderBlock(3, 16)     # 384x288 → 192x144
-        self.enc2 = EncoderBlock(16, 32)    # 192x144 → 96x72
-        self.enc3 = EncoderBlock(32, 64)    # 96x72 → 48x36
-        self.enc4 = EncoderBlock(64, 128)   # 48x36 → 24x18
 
-        self.bottleneck = ConvBlock(128, 256)
+        # new steam block
+        self.stem = ConvBlock(3, 16)
 
-        self.dec4 = DecoderBlock(256, 128)  # 24x18 → 48x36
-        self.dec3 = DecoderBlock(128, 64)   # 48x36 → 96x72
-        self.dec2 = DecoderBlock(64, 32)    # 96x72 → 192x144
-        self.dec1 = DecoderBlock(32, 16)    # 192x144 → 384x288
+        # encoder
+        self.enc1 = EncoderBlock(16, 32)     # 384x288 → 192x144
+        self.enc2 = EncoderBlock(32, 64)    # 192x144 → 96x72
+        self.enc3 = EncoderBlock(64, 128)    # 96x72 → 48x36
+        self.enc4 = EncoderBlock(128, 256)   # 48x36 → 24x18
 
-        self.final = nn.Conv2d(16, 2, kernel_size=1)  # 2 sınıf
+        # bottleneck
+        self.bottleneck = ConvBlock(256, 512)
+
+        # decoder
+        self.dec4 = DecoderBlock(512, 256)  # 24x18 → 48x36
+        self.dec3 = DecoderBlock(256, 128)   # 48x36 → 96x72
+        self.dec2 = DecoderBlock(128, 64)    # 96x72 → 192x144
+        self.dec1 = DecoderBlock(64, 32)    # 192x144 → 384x288
+
+        #Final result, 2 output
+        self.final = nn.Conv2d(32, 2, kernel_size=1)  # 2 sınıf
 
     def forward(self, x):
+        x = self.stem(x)
         x1, x = self.enc1(x)
         x2, x = self.enc2(x)
         x3, x = self.enc3(x)
