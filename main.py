@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
 from Model import gaze_dataset
-from OldModel import efficient_b0
+from Model.OldModel import efficient_b0
 import os
 import multiprocessing
 import matplotlib.pyplot as plt
