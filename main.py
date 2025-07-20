@@ -5,8 +5,8 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
-import gaze_dataset
-import efficient_b0
+from Model import gaze_dataset
+from OldModel import efficient_b0
 import os
 import multiprocessing
 import matplotlib.pyplot as plt

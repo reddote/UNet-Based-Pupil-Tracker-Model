@@ -8,7 +8,7 @@ from torchvision.transforms import transforms
 from PIL import Image
 import math
 
-
+# DATALOADER
 class GazeDataset(Dataset):
     def __init__(self, phase='train', transform=None):
         self.phase = phase

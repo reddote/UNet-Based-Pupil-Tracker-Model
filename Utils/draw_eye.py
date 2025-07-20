@@ -7,8 +7,7 @@ import math
 class FindGaze:
     def __init__(self):
         project_folder = os.path.dirname(__file__)
-        project_folder_image = r"C:\Users\malpe\Desktop\Project\eNet"
-        self.image_path = os.path.join(project_folder_image, 'output_frames\\1\\' + '00001.jpg')
+        self.image_path = os.path.join(project_folder, 'output_frames\\1\\' + '00001.jpg')
         self.pupil_path = os.path.join(project_folder, 'videosData\\' + '1-IrisEli.csv')
         self.eyeball_path = os.path.join(project_folder, 'videosData\\' + '1-EyeBall.csv')
         self.pupil_in_iris_path = os.path.join(project_folder, 'videosData\\' + '1-PupilInIris.csv')

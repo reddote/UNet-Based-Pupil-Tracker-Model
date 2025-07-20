@@ -5,9 +5,9 @@ from torchvision import transforms
 from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
-import gaze_dataset
+from Model import gaze_dataset
 # import efficient_b0
-from unet_model import UNet384x288
+from Model.unet_model import UNet384x288
 import os
 import multiprocessing
 # import matplotlib.pyplot as plt

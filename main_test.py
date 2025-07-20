@@ -2,7 +2,6 @@ import logging
 import math
 import os
 import sys
-import efficient_b0
 from PIL import Image
 import torch
 import torchvision.transforms as transforms
@@ -35,10 +34,10 @@ data_transforms = transforms.Compose([
 
 class Main:
     def __init__(self):
-        # Model ve diğer ayarları başlatma
+        # Initializing the model and other settings
         self.model = test_model.TestModel().to(device)
         self.model.load_state_dict(torch.load('5_efficientnet_b0_regression_0.pth', map_location=device))
-        self.model.eval()  # Modeli değerlendirme moduna al
+        self.model.eval()  # Set the model to evaluation mode
         self.transform = transforms.Compose([
             transforms.Resize((224, 168)),
             transforms.ToTensor(),
@@ -46,29 +45,29 @@ class Main:
         ])
 
     def run2(self, image_path):
-        # Modeli tek bir örnek üzerinde test eden yöntem
-        # 1. Görüntüyü yükle
+        # Method for testing the model on a single sample
+        # 1. Load the image
         image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
         if image is None:
             raise ValueError(f"Image not found or unable to open: {image_path}")
 
-        # 2. Görüntüyü 3 kanallı hale getir
+        # 2. Convert the image to 3 channels
         image_3channel = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
 
-        # 4. Görüntüyü PIL formatına çevir
+        # 3. Convert the image to PIL format
         pil_image = Image.fromarray(image_3channel)
 
-        # 5. Görüntüyü dönüştür
+        # 4. Transform the image
         input_tensor = self.transform(pil_image)
         input_tensor = input_tensor.unsqueeze(
-            0)  # Modelin beklediği 4 boyutlu tensör şekline getir (batch_size, channels, height, width)
+            0)  # Reshape to the 4D tensor format expected by the model (batch_size, channels, height, width)
 
-        # 6. Modeli kullanarak tahmin yap
-        with torch.no_grad():  # Gradient hesaplamalarını kapat
+        # 5. Make a prediction using the model
+        with torch.no_grad():  # Disable gradient computations
             input_tensor = input_tensor.to(device)
             output = self.model(input_tensor)
 
-        # 7. Tahmini al ve döndür
+        # 6. Get the prediction and return it
         predicted_pupil = output.cpu().numpy().flatten()  # GPU'dan CPU'ya taşı ve numpy dizisine dönüştür
         print(f"Predicted Pupil Diameter (angle, center_x, center_y, width, height): {predicted_pupil}")
         self.run_image(image_3channel, predicted_pupil[0], predicted_pupil[1],
@@ -94,7 +93,7 @@ class Main:
         cv2.destroyAllWindows()
 
 
-# Örnek kullanım
+# Example run
 if __name__ == '__main__':
     main = Main()
     project_folder = os.path.dirname(__file__)

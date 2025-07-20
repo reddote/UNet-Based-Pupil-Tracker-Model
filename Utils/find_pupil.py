@@ -7,7 +7,7 @@ import file_writer
 import logging
 
 # Setup logging
-file_handler = logging.FileHandler(filename='log.txt')
+file_handler = logging.FileHandler(filename='../log.txt')
 stdout_handler = logging.StreamHandler(stream=sys.stdout)
 handlers = [file_handler, stdout_handler]
 
