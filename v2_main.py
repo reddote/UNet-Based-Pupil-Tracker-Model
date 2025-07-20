@@ -51,8 +51,8 @@ class Main:
         )
 
         # Create DataLoaders
-        self.train_dataloader = DataLoader(self.dataset, batch_size=8, shuffle=True, num_workers=4)
-        self.val_dataloader = DataLoader(self.datasetVal, batch_size=8, shuffle=False,
+        self.train_dataloader = DataLoader(self.dataset, batch_size=12, shuffle=True, num_workers=4)
+        self.val_dataloader = DataLoader(self.datasetVal, batch_size=12, shuffle=False,
                                          num_workers=4)  # No shuffle for validation
 
         # Include the validation dataloader in a dictionary with the training dataloader
@@ -89,7 +89,7 @@ class Main:
 
         # Train the model
         trained_model = self.train_model(self.model, self.segmentation_loss, self.optimizer, self.dataloaders,
-                                         num_epochs=5)
+                                         num_epochs=7)
 
         if trained_model is not None:
             # Save the model
@@ -98,6 +98,60 @@ class Main:
         else:
             logger.error("Trained model is None")
             exit()
+
+    def calculate_segmentation_accuracy(self, preds, labels):
+        """
+        preds: [B, 2, H, W] - model output logits
+        labels: [B, H, W]   - ground truth class indices (0 or 1)
+
+        Returns: accuracy as a percentage
+        """
+        pred_labels = torch.argmax(preds, dim=1)  # [B, H, W]
+        correct = (pred_labels == labels).float()
+        acc = correct.sum() / correct.numel()
+        return acc.item() * 100
+
+    def evaluate_metrics(self, preds, targets, num_classes=2, smooth=1e-6):
+        """
+        preds: model çıktısı (B, C, H, W) - logits veya softmax sonrası olabilir
+        targets: ground truth (B, H, W) - integer sınıf etiketleri
+        """
+
+        # Argmax ile tahmin edilen sınıflar (B, H, W)
+        preds = torch.argmax(preds, dim=1)
+
+        # Düzleştirme (flatten)
+        preds_flat = preds.view(-1)
+        targets_flat = targets.view(-1)
+
+        # Genel accuracy
+        correct = (preds_flat == targets_flat).float()
+        accuracy = correct.sum() / correct.numel()
+
+        # Sadece sınıf 1 (örneğin pupil) için istatistikler
+        TP = ((preds_flat == 1) & (targets_flat == 1)).sum().float()
+        FP = ((preds_flat == 1) & (targets_flat == 0)).sum().float()
+        FN = ((preds_flat == 0) & (targets_flat == 1)).sum().float()
+
+        # Precision, Recall
+        precision = TP / (TP + FP + smooth)
+        recall = TP / (TP + FN + smooth)
+
+        # Dice Score
+        dice = (2 * TP + smooth) / (2 * TP + FP + FN + smooth)
+
+        # IoU
+        intersection = TP
+        union = TP + FP + FN
+        iou = (intersection + smooth) / (union + smooth)
+
+        return {
+            "accuracy": accuracy.item(),
+            "precision": precision.item(),
+            "recall": recall.item(),
+            "dice": dice.item(),
+            "iou": iou.item()
+        }
 
     def multi_task_criterion(self, predictions, targets):
         # Predictions: [center_x, center_y, radians(angle), width, height]
@@ -147,8 +201,9 @@ class Main:
                 optimizer.step()
                 train_loss = loss.item()
                 running_loss += train_loss
-                if tensorboard_counter % 10 == 0:
-                    print(f"Phase: Train Average Loss : {loss.item()}")
+                # if tensorboard_counter % 10 == 0:
+                #     print(f"Phase: Train Average Loss : {loss.item()}")
+                #
                 self.writer.add_scalar('Loss/Train', train_loss, tensorboard_counter)
                 tensorboard_counter += 1
 
@@ -161,6 +216,11 @@ class Main:
             model.eval()  # Set model to evaluate mode
             val_loss = 0
             running_loss = val_loss
+            total_accuracy = 0
+            total_precision = 0
+            total_recall = 0
+            total_dice = 0
+            total_iou = 0
             for inputs, labels in dataloaders['val']:
                 inputs = inputs.to(device)
                 labels = labels.to(device).long()  # Now labels should have shape [batch_size, 2]
@@ -170,13 +230,38 @@ class Main:
                     loss = criterion(outputs, labels)
                     val_loss = loss.item()
                     running_loss += val_loss
-                    if tensorboard_counter % 10 == 0:
-                        print(f"Phase: Val Average Loss : {loss.item()}")
+                    accuracy = self.calculate_segmentation_accuracy(outputs, labels)
+                    metrics = self.evaluate_metrics(outputs, labels)
+                    total_accuracy += accuracy
+                    total_precision += metrics['precision']
+                    total_recall += metrics['recall']
+                    total_dice += metrics['dice']
+                    total_iou += metrics['iou']
+                    # if validation_counter % 10 == 0:
+                    #     print(f"Phase: Val Average Loss : {loss.item()}")
+                    #     print(f"✅ Segmentation Accuracy: {accuracy:.2f}%")
+                    #     logger.info(f'Metric Loss: {metrics}')
+                    #     print(metrics)
                     self.writer.add_scalar('Loss/Val', val_loss, validation_counter)
                     # This total loss is then added to running_loss, which accumulates the loss for the entire epoch
                     validation_counter += 1
             val_epoch_loss = running_loss / len(dataloaders['val'].dataset)
+            avg_acc = total_accuracy / (len(dataloaders['val'].dataset) / dataloaders['val'].batch_size)
+            avg_precision = total_precision / (len(dataloaders['val'].dataset) / dataloaders['val'].batch_size)
+            avg_recall = total_recall / (len(dataloaders['val'].dataset) / dataloaders['val'].batch_size)
+            avg_dice = total_dice / (len(dataloaders['val'].dataset) / dataloaders['val'].batch_size)
+            avg_iou = total_iou / (len(dataloaders['val'].dataset) / dataloaders['val'].batch_size)
+            print(f'Validation Avg Acc = {avg_acc}')
+            print(f'Validation Avg Precision = {avg_precision}')
+            print(f'Validation Avg Recall = {avg_recall}')
+            print(f'Validation Avg Dice = {avg_dice}')
+            print(f'Validation Avg IoU = {avg_iou}')
             print(f'Before LR: {self.lr_scheduler.get_last_lr()}')
+            logger.info(f'Validation Avg Acc = {avg_acc}')
+            logger.info(f'Validation Avg Precision = {avg_precision}')
+            logger.info(f'Validation Avg Recall = {avg_recall}')
+            logger.info(f'Validation Avg Dice = {avg_dice}')
+            logger.info(f'Validation Avg IoU = {avg_iou}')
             self.lr_scheduler.step(val_epoch_loss)
             # Log the losses to TensorBoard
             # Save Loss values self.train_loss.append(epoch_loss)

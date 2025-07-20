@@ -13,15 +13,15 @@ class GazeDataset(Dataset):
     def __init__(self, phase='train', transform=None):
         self.phase = phase
         project_folder = os.path.dirname(__file__)
-        project_folder_images = r"C:\Users\malpe\Desktop\Project\eNet"
-        self.image_path = os.path.join(project_folder_images, 'output_frames')
-        self.segmentation_path = os.path.join(project_folder_images, 'segmentation')
+        # project_folder_images = r"C:\Users\malpe\Desktop\Project\eNet"
+        self.image_path = os.path.join(project_folder, 'output_frames')
+        self.segmentation_path = os.path.join(project_folder, 'segmentation')
         self.pupil_csv_path = os.path.join(project_folder, 'videosData')
         self.validity_csv_path = os.path.join(project_folder, 'videosData')
         # self.eye_csv_path = os.path.join(project_folder, 'videosData')
 
         self.train_file_number = [1, 2, 3, 4, 5, 6, 19, 25, 15, 16]
-        self.val_file_number = [17, 18]
+        self.val_file_number = [17, 18, 19]
 
         # Load different files based on the phase
         if phase == 'train':
@@ -108,7 +108,6 @@ class GazeDataset(Dataset):
             self.pupil_csv = pd.read_csv(self.images_path_array[item][1])
             self.validity = pd.read_csv(self.images_path_array[item][2])
             idx = self.images_path_array[item][3]
-            # print(self.images_path_array[item][1])
             """
             # self.eye_csv = pd.read_csv(self.images_path_array[item][4])
             self.run_image(temp_image, self.pupil_csv.iloc[idx]['CENTER X'], self.pupil_csv.iloc[idx]['CENTER Y'],
@@ -214,7 +213,7 @@ class GazeDataset(Dataset):
 
 
 dataset = GazeDataset(phase='train', transform=None)
-dataset.__getitem__(95800)
+dataset.__getitem__(0)
 """
 
 
