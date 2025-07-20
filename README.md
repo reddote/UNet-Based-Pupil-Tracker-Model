@@ -111,3 +111,6 @@ python main_test.py
 * Segmentation masks (ground truth) must be stored in the `segmentation/` folder.
 * Input image folders are inside `output_frames/`.
 * Test image predictions (visual output) will appear in `predict/`.
+
+## License
+This project is licensed under the GNU General Public License v3.0 (GNU GPLv3) License.
