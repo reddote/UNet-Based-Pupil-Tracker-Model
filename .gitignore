@@ -173,7 +173,6 @@ GazeCSV/
 image1gaze/
 images1csv/
 eNetEyeTracking.rar
-predict/
 GazeCSV1/
 GazeCSV1val/
 images1val/
@@ -184,7 +183,6 @@ NvGazeCSVval/
 imagesval/
 videos/
 videosData/
-output_frames/
 runs/
 olddata/
 log/
