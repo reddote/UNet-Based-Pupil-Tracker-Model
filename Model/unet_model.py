@@ -67,7 +67,7 @@ class UNet384x288(nn.Module):
 
         # Output refine block to clean/polish the segmentation output with 5x5 kernel
         self.output_refine = nn.Sequential(
-            nn.Conv2d(2, 2, kernel_size=5, padding=2),
+            nn.Conv2d(2, 2, kernel_size=3, padding=2),
             nn.ReLU(inplace=True),
             nn.Conv2d(2, 2, kernel_size=1)
         )
