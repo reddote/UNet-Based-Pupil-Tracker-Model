@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-# Basic block: Conv + BatchNorm + ReLU with 5x5 kernel
+# Basic block: Conv + BatchNorm + ReLU with 3x3 kernel
 class ConvBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
@@ -65,7 +65,7 @@ class UNet384x288(nn.Module):
         # Final 1x1 Conv layer to produce output
         self.final = nn.Conv2d(32, 2, kernel_size=1)  # 2 output classes (e.g., background + pupil)
 
-        # Output refine block to clean/polish the segmentation output with 5x5 kernel
+        # Output refine block to clean/polish the segmentation output with 3x3 kernel
         self.output_refine = nn.Sequential(
             nn.Conv2d(2, 2, kernel_size=3, padding=2),
             nn.ReLU(inplace=True),
