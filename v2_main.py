@@ -65,11 +65,11 @@ class Main:
         self.model = UNet384x288().to(device)
         print(device)
         # multi task criterion
-        self.alpha = alpha
-        self.beta = beta
-        self.gamma = gamma
-        self.mse_loss = nn.MSELoss()
-        self.smooth_l1_loss = nn.SmoothL1Loss()
+        # self.alpha = alpha
+        # self.beta = beta
+        # self.gamma = gamma
+        # self.mse_loss = nn.MSELoss()
+        # self.smooth_l1_loss = nn.SmoothL1Loss()
 
         # Define weights for each class (higher weight for minority classes)
         class_weights = torch.tensor([10.0, 1.0])  # Pupil, Background, np_zero
@@ -153,23 +153,23 @@ class Main:
             "iou": iou.item()
         }
 
-    def multi_task_criterion(self, predictions, targets):
-        # Predictions: [center_x, center_y, radians(angle), width, height]
-        # Targets: [center_x, center_y, radians(angle), width, height]
-
-        # Center loss
-        loss_center = self.mse_loss(predictions[:, 0:2], targets[:, 0:2])  # center_x, center_y
-
-        # Angle loss
-        loss_angle = self.mse_loss(predictions[:, 2], targets[:, 2])  # radians(angle)
-
-        # Size loss
-        loss_size = self.smooth_l1_loss(predictions[:, 3:], targets[:, 3:])  # width, height
-
-        # Combine losses
-        total_loss = self.alpha * loss_center + self.beta * loss_angle + self.gamma * loss_size
-
-        return total_loss
+    # def multi_task_criterion(self, predictions, targets):
+    #     # Predictions: [center_x, center_y, radians(angle), width, height]
+    #     # Targets: [center_x, center_y, radians(angle), width, height]
+    # 
+    #     # Center loss
+    #     loss_center = self.mse_loss(predictions[:, 0:2], targets[:, 0:2])  # center_x, center_y
+    # 
+    #     # Angle loss
+    #     loss_angle = self.mse_loss(predictions[:, 2], targets[:, 2])  # radians(angle)
+    # 
+    #     # Size loss
+    #     loss_size = self.smooth_l1_loss(predictions[:, 3:], targets[:, 3:])  # width, height
+    # 
+    #     # Combine losses
+    #     total_loss = self.alpha * loss_center + self.beta * loss_angle + self.gamma * loss_size
+    # 
+    #     return total_loss
 
     def train_model(self, model, criterion, optimizer, dataloaders, num_epochs=10):
         self.num_epochs += num_epochs
